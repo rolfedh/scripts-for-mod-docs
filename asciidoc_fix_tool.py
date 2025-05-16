@@ -2,23 +2,28 @@ import os
 import re
 import argparse
 
-# Regex patterns
+# ------------------------
+# Regular expression patterns for detecting AsciiDoc content structure
+# ------------------------
 mod_docs_type_pattern = re.compile(r'^:.*_mod-docs-content-type:', re.MULTILINE)
 topic_id_pattern = re.compile(r'^\[id="[^"]+_\{context\}"\]', re.MULTILINE)
 h1_title_pattern = re.compile(r'^(= .+)', re.MULTILINE)
 image_pattern = re.compile(r'(image::[^\[]+\[)([^\]]*)(\])')
 
+# Determine content type based on file name prefix (supports _ and -)
 def get_doc_type(filename):
-    if filename.startswith("proc_"):
-        return "PROCEDURE"
-    elif filename.startswith("con_"):
-        return "CONCEPT"
-    elif filename.startswith("ref_"):
-        return "REFERENCE"
-    elif filename.startswith("assembly_"):
-        return "ASSEMBLY"
+    prefix_map = {
+        "proc": "PROCEDURE",
+        "con": "CONCEPT",
+        "ref": "REFERENCE",
+        "assembly": "ASSEMBLY"
+    }
+    for prefix, doc_type in prefix_map.items():
+        if filename.startswith(f"{prefix}_") or filename.startswith(f"{prefix}-"):
+            return doc_type
     return None
 
+# Ensure a blank line follows the level 0 (=) title
 def ensure_blank_line_after_title(lines):
     for i in range(len(lines) - 1):
         if lines[i].startswith('= ') and lines[i + 1].strip() != "":
@@ -26,22 +31,25 @@ def ensure_blank_line_after_title(lines):
             return lines, True
     return lines, False
 
+# Check whether a short introductory paragraph exists after the H1 title
 def has_short_intro(lines):
     h1_index = next((i for i, line in enumerate(lines) if line.startswith("= ")), None)
     if h1_index is None or h1_index + 1 >= len(lines):
         return False
     for line in lines[h1_index + 1:]:
-        if line.strip() == "":
+        stripped = line.strip()
+        if not stripped:
             continue
-        if line.strip().startswith((
-            ".", "*", "-", "+", "=", "[", "include::", "image::", "----", "....", "//"
-        )):
+        if stripped.startswith("//") or stripped.startswith(":"):
+            continue
+        if stripped.startswith((".", "*", "-", "+", "=", "[", "include::", "image::", "----", "....")):
             return False
-        if len(line.strip()) > 10 and any(c.islower() for c in line) and (line.strip().endswith('.') or len(line.split()) > 5):
+        if len(stripped) > 10 and any(c.islower() for c in stripped) and (stripped.endswith('.') or len(stripped.split()) > 5):
             return True
         return False
     return False
 
+# Fix or flag images that lack alt text or use unquoted alt text
 def fix_images(lines):
     new_lines = []
     for line in lines:
@@ -63,6 +71,7 @@ def fix_images(lines):
             new_lines.append(line)
     return new_lines
 
+# Apply all fixes to a single AsciiDoc file
 def fix_file(filepath, dry_run=False):
     filename = os.path.basename(filepath)
     doc_type = get_doc_type(filename)
@@ -92,7 +101,6 @@ def fix_file(filepath, dry_run=False):
     if inserted_blank:
         changed = True
 
-    # Check and insert TODO for missing short intro
     if not has_short_intro(lines):
         h1_index = next((i for i, line in enumerate(lines) if line.startswith("= ")), None)
         if h1_index is not None:
@@ -111,6 +119,7 @@ def fix_file(filepath, dry_run=False):
 
     return changed, None
 
+# Entry point: parse args and apply fixes to all .adoc files in the directory
 def main():
     parser = argparse.ArgumentParser(description="Auto-fix AsciiDoc issues including metadata, images, structure, and intro detection.")
     parser.add_argument("directory", help="Directory to scan")
