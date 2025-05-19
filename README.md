@@ -1,6 +1,6 @@
 # 📄 AsciiDoc Mod Docs Fixer
 
-A Python script for automatically correcting common issues in modular AsciiDoc files used in Red Hat-style documentation. The script helps prepare content for content migration and standardization by enforcing rules from the [Modular Documentation Templates Checklist](https://github.com/redhat-documentation/modular-docs/).
+A Python script for automatically correcting common issues in modular AsciiDoc files used in Red Hat-style documentation. The script helps prepare content for content migration and standardization by enforcing rules from the "Modular documentation templates checklist"
 
 ---
 
