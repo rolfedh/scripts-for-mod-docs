@@ -55,7 +55,7 @@ After completing your general file fixes and manual cleanup, run this script to 
   Inserts:
   ```asciidoc
   ifdef::context[:parent-context: {context}]
-````
+  ```
 
 * **Missing bottom conditionals**
   Appends:
