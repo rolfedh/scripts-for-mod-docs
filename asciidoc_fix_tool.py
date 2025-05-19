@@ -1,16 +1,19 @@
+# ------------------------
+# Imports and Regex Patterns
+# ------------------------
 import os
 import re
 import argparse
 
-# ------------------------
-# Regular expression patterns for detecting AsciiDoc content structure
-# ------------------------
 mod_docs_type_pattern = re.compile(r'^:.*_mod-docs-content-type:', re.MULTILINE)
 topic_id_pattern = re.compile(r'^\[id="[^"]+_\{context\}"\]', re.MULTILINE)
 h1_title_pattern = re.compile(r'^(= .+)', re.MULTILINE)
 image_pattern = re.compile(r'(image::[^\[]+\[)([^\]]*)(\])')
 
-# Determine content type based on file name prefix (supports _ and -)
+
+# ------------------------
+# Determine content type based on file name prefix or fallback attribute
+# ------------------------
 def get_doc_type(filename):
     prefix_map = {
         "proc": "PROCEDURE",
@@ -23,7 +26,10 @@ def get_doc_type(filename):
             return doc_type
     return None
 
-# Ensure a blank line follows the level 0 (=) title
+
+# ------------------------
+# Ensure a blank line after the H1 title
+# ------------------------
 def ensure_blank_line_after_title(lines):
     for i in range(len(lines) - 1):
         if lines[i].startswith('= ') and lines[i + 1].strip() != "":
@@ -31,16 +37,17 @@ def ensure_blank_line_after_title(lines):
             return lines, True
     return lines, False
 
-# Check whether a short introductory paragraph exists after the H1 title
+
+# ------------------------
+# Heuristic to detect a short introductory paragraph
+# ------------------------
 def has_short_intro(lines):
     h1_index = next((i for i, line in enumerate(lines) if line.startswith("= ")), None)
     if h1_index is None or h1_index + 1 >= len(lines):
         return False
     for line in lines[h1_index + 1:]:
         stripped = line.strip()
-        if not stripped:
-            continue
-        if stripped.startswith("//") or stripped.startswith(":"):
+        if not stripped or stripped.startswith("//") or stripped.startswith(":"):
             continue
         if stripped.startswith((".", "*", "-", "+", "=", "[", "include::", "image::", "----", "....")):
             return False
@@ -49,7 +56,10 @@ def has_short_intro(lines):
         return False
     return False
 
-# Fix or flag images that lack alt text or use unquoted alt text
+
+# ------------------------
+# Fix or flag images missing alt text or with unquoted descriptions
+# ------------------------
 def fix_images(lines):
     new_lines = []
     for line in lines:
@@ -71,17 +81,31 @@ def fix_images(lines):
             new_lines.append(line)
     return new_lines
 
+
+# ------------------------
 # Apply all fixes to a single AsciiDoc file
+# ------------------------
 def fix_file(filepath, dry_run=False):
     filename = os.path.basename(filepath)
-    doc_type = get_doc_type(filename)
-    if not doc_type:
-        return False, f"Unknown file type for: {filename}"
 
     with open(filepath, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
+    doc_type = get_doc_type(filename)
     changed = False
+
+    if not doc_type:
+        for l in lines:
+            if '_mod-docs-content-type:' in l:
+                doc_type_match = re.search(r':_mod-docs-content-type:\s*(\w+)', l)
+                if doc_type_match and doc_type_match.group(1) in ['PROCEDURE', 'CONCEPT', 'REFERENCE', 'ASSEMBLY']:
+                    doc_type = doc_type_match.group(1)
+                    break
+        if not doc_type:
+            lines.insert(0, ':_mod-docs-content-type: TBD\n')
+            lines.insert(0, '// TODO: Set the :_mod-docs-content-type: attribute and value\n')
+            changed = True
+            doc_type = "TBD"
 
     if not any(mod_docs_type_pattern.match(line) for line in lines):
         lines.insert(0, f":_mod-docs-content-type: {doc_type}\n")
@@ -119,7 +143,10 @@ def fix_file(filepath, dry_run=False):
 
     return changed, None
 
-# Entry point: parse args and apply fixes to all .adoc files in the directory
+
+# ------------------------
+# Entry point: scan directory and apply fixes
+# ------------------------
 def main():
     parser = argparse.ArgumentParser(description="Auto-fix AsciiDoc issues including metadata, images, structure, and intro detection.")
     parser.add_argument("directory", help="Directory to scan")
