@@ -6,7 +6,7 @@ A set of Python scripts for automatically correcting common issues in modular As
 
 ## ✅ What the Scripts Fix
 
-There are two scripts in this toolchain. Run them in sequence for best results.
+There are three scripts in this toolchain. Run them in sequence for best results.
 
 ---
 
@@ -83,6 +83,30 @@ After completing your general file fixes and manual cleanup, run this script to 
 
 ---
 
+### `fix_concept_reference_files.py`
+
+Run this script after fixing general issues. It flags instructional or structural issues that are specific to **CONCEPT** and **REFERENCE** modules.
+
+#### Flags the following:
+
+- **Imperative instructions in paragraphs or list items**
+  - Example: `. Click the button.` or `1. Configure the server.`  
+  - Adds a `// TODO: Avoid instructions in concept and reference modules.` comment.
+
+- **Procedural patterns**
+  - Flags `.Procedure` and `.Prerequisites` blocks.
+  - Flags numbered steps that start with a capital imperative verb.
+  - Adds a `// TODO: Consider changing the :_mod-docs-content-type: to PROCEDURE...` comment.
+
+- **Level 2 or deeper section titles (`===` or more)**
+  - Flags these unless they are part of an admonition (`====` block).
+
+- **Unexpected block titles**
+  - Accepts only `.Next steps` and `.Additional resources`.
+  - Flags all others (e.g., `.Note`, `.Procedure`, `.Examples`) unless followed by a structural block (like a table, code block, etc.).
+
+---
+
 ## ⚙️ Prerequisites
 
 * Python 3.x
@@ -140,6 +164,20 @@ Or in dry-run mode:
 
 ```bash
 python ~/scripts-for-mod-docs/fix_assembly_files.py ./<path-to-assemblies> --dry-run
+```
+
+---
+
+#### Step 3: Run `fix_concept_reference_files.py` (concept/reference structural cleanup)
+
+```bash
+python ~/scripts-for-mod-docs/fix_concept_reference_files.py ./<path-to-modules>
+```
+
+Or in dry-run mode:
+
+```bash
+python ~/scripts-for-mod-docs/fix_concept_reference_files.py ./<path-to-modules> --dry-run
 ```
 
 ---
