@@ -49,7 +49,7 @@ def has_short_intro(lines):
         stripped = line.strip()
         if not stripped or stripped.startswith("//") or stripped.startswith(":"):
             continue
-        if stripped.startswith((".", "*", "-", "+", "=", "[", "include::", "image::", "----", "....")):
+        if stripped.startswith((".", "*", "-", "+", "=", "[", "include::", "image::", "----")):
             return False
         if len(stripped) > 10 and any(c.islower() for c in stripped) and (stripped.endswith('.') or len(stripped.split()) > 5):
             return True
@@ -79,6 +79,27 @@ def fix_images(lines):
                 new_lines.append(line)
         else:
             new_lines.append(line)
+    return new_lines
+
+
+# ------------------------
+# Ensure Additional Resources role is correctly applied
+# ------------------------
+def ensure_additional_resources_role(lines):
+    new_lines = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        if (
+            stripped == "== Additional resources"
+            or stripped == ".Additional resources"
+        ):
+            prev_line = lines[i - 1].strip() if i > 0 else ""
+            if prev_line != '[role="_additional-resources"]':
+                new_lines.append('[role="_additional-resources"]\n')
+        new_lines.append(line)
+        i += 1
     return new_lines
 
 
@@ -133,6 +154,11 @@ def fix_file(filepath, dry_run=False):
             changed = True
 
     updated_lines = fix_images(lines)
+    if updated_lines != lines:
+        lines = updated_lines
+        changed = True
+
+    updated_lines = ensure_additional_resources_role(lines)
     if updated_lines != lines:
         lines = updated_lines
         changed = True

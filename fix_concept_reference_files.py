@@ -140,9 +140,9 @@ def fix_conref_file(filepath, dry_run=False):
         lines.insert(instruct_index, "// TODO: Avoid instructions in concept and reference modules.\n")
         changed = True
 
-    # Flag .Procedure and .Prerequisites blocks
-    for idx, line in enumerate(lines):
-        if line.strip() in [".Procedure", ".Prerequisites"]:
+    # Flag .Procedure and .Prerequisites blocks (iterate in reverse)
+    for idx in reversed(range(len(lines))):
+        if lines[idx].strip() in [".Procedure", ".Prerequisites"]:
             lines.insert(
                 idx,
                 "// TODO: Consider changing the :_mod-docs-content-type: to PROCEDURE or moving this procedure to a new file.\n"
