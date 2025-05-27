@@ -9,6 +9,7 @@ include_pattern = re.compile(r'^include::')
 h2_title_pattern = re.compile(r'^(===+)\s+\S')  # Matches headings with at least three = followed by text
 block_title_pattern = re.compile(r'^\.[A-Za-z].*')
 context_declaration_pattern = re.compile(r'^:context:')
+assembly_type_pattern = re.compile(r':_mod-docs-content-type:\s*ASSEMBLY')
 
 # ------------------------
 # Ensure the top-level conditional is present
@@ -86,6 +87,10 @@ def flag_block_titles(lines):
 def fix_assembly_file(filepath, dry_run=False):
     with open(filepath, "r", encoding="utf-8") as f:
         lines = f.readlines()
+
+    # Only operate on files with :_mod-docs-content-type: ASSEMBLY
+    if not any(assembly_type_pattern.search(line) for line in lines):
+        return False
 
     changed = False
     changed |= ensure_top_conditional(lines)

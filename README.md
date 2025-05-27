@@ -107,6 +107,43 @@ Run this script after fixing general issues. It flags instructional or structura
 
 ---
 
+### `fix_procedure_files.py`
+
+Run this script after fixing general issues. It enforces structural and content rules specific to **PROCEDURE** modules.
+
+#### Fixes and flags the following in procedures:
+
+- **Operates only on files with `:_mod-docs-content-type: PROCEDURE`**
+  - Skips files that do not declare this type.
+
+- **Multiple `.Procedure` block titles**
+  - Flags if more than one `.Procedure` block is present.
+  - Adds a `// TODO: Must include only one \`.Procedure\` block title and list.` comment.
+
+- **Embellished `.Procedure` block titles**
+  - Flags `.Procedure` titles with extra words (e.g., `.Procedure for...`).
+  - Adds a `// TODO: The .Procedure block title must not contain additional words.` comment.
+
+- **Missing list after `.Procedure`**
+  - Flags if the `.Procedure` block is not immediately followed by an ordered or unordered list.
+  - Allows blank lines and comments between `.Procedure` and the list.
+  - Adds a `// TODO: Must include a \`.Procedure\` block title followed by an ordered or unordered list.` comment.
+
+- **Content after the last procedure step**
+  - Only allows certain block titles after the procedure steps: `.Verification`, `.Troubleshooting`, `.Troubleshooting steps`, `.Next steps`, `.Next step`, `.Additional resources`.
+  - Flags any other block titles or content after the last step.
+  - Adds a `// TODO: Only \`.Procedure\`, \`.Verification\`, \`.Troubleshooting\`, \`.Next steps\`, etc. are allowed block titles in procedure modules.` comment.
+  - Adds a `// TODO: Content found after last procedure step. Only allowed sections may follow.` comment for other content.
+
+- **Special handling for `.Additional resources`**
+  - Ensures `.Additional resources` is immediately preceded by `[role="_additional-resources"]`.
+  - If missing, inserts `[role="_additional-resources"]` above `.Additional resources`.
+
+- **Never flags content inside code blocks**
+  - Skips all flagging logic for lines inside AsciiDoc code blocks (delimited by `----` or `....`).
+
+---
+
 ## ⚙️ Prerequisites
 
 * Python 3.x
@@ -178,6 +215,20 @@ Or in dry-run mode:
 
 ```bash
 python ~/scripts-for-mod-docs/fix_concept_reference_files.py ./<path-to-modules> --dry-run
+```
+
+---
+
+#### Step 4: Run `fix_procedure_files.py` (procedure module structure and content)
+
+```bash
+python ~/scripts-for-mod-docs/fix_procedure_files.py ./<path-to-procedures>
+```
+
+Or in dry-run mode:
+
+```bash
+python ~/scripts-for-mod-docs/fix_procedure_files.py ./<path-to-procedures> --dry-run
 ```
 
 ---
